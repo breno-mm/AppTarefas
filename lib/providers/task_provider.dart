@@ -1,62 +1,92 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart'; // Para gerar IDs únicos
+import 'package:uuid/uuid.dart';
 import '../models/task.dart';
+import '../helpers/database_helper.dart';
 
 class TaskProvider with ChangeNotifier {
-  final List<Task> _tasks = [
-    //tarefas iniciais para teste
-    Task(id: '1', title: 'Tarefa de Exemplo 1', status: TaskStatus.Parado),
-    Task(
-      id: '2',
-      title: 'Tarefa de Exemplo 2',
-      status: TaskStatus.EmAndamento,
-      description: "Descrição longa",
-    ),
-  ];
+  List<Task> _tasks = []; // A lista começa vazia
+  TaskStatus? _currentFilter;
+  bool _isLoading = false; // Para saber se está carregando do banco
 
-  TaskStatus? _currentFilter; // Nenhum filtro por padrão
+  TaskProvider() {
+    // Quando o Provider é criado carrega as tarefas do banco
+    loadTasks();
+  }
 
   List<Task> get tasks {
     if (_currentFilter == null) {
-      return [..._tasks]; // Retorna todas se não houver filtro
+      return [..._tasks];
     } else {
       return _tasks.where((task) => task.status == _currentFilter).toList();
     }
   }
 
   TaskStatus? get currentFilter => _currentFilter;
+  bool get isLoading => _isLoading; // status de carregamento
 
-  void addTask(String title, String description, TaskStatus status) {
+  // Carrega as tarefas do banco de dados
+  Future<void> loadTasks() async {
+    _isLoading = true;
+    notifyListeners(); // Aviso de carregamento
+
+    final dbHelper = DatabaseHelper.instance;
+    _tasks = await dbHelper.queryAllTasks();
+
+    _isLoading = false;
+    notifyListeners(); // Avisa que terminou e atualiza a tela
+  }
+
+  // Adiciona uma nova tarefa no banco
+  Future<void> addTask(
+    String title,
+    String description,
+    TaskStatus status,
+  ) async {
     const uuid = Uuid();
     final newTask = Task(
-      id: uuid.v4(), // Gera um ID único
+      id: uuid.v4(),
       title: title,
       description: description,
       status: status,
       isCompleted: status == TaskStatus.Concluido,
     );
-    _tasks.add(newTask);
-    notifyListeners();
+
+    final dbHelper = DatabaseHelper.instance;
+    await dbHelper.insert(newTask);
+
+    await loadTasks(); // Recarrega a lista do banco
   }
 
-  void toggleTaskCompletion(String id) {
+  // Atualiza uma tarefa existente no banco
+  Future<void> updateTask(Task task) async {
+    final dbHelper = DatabaseHelper.instance;
+    await dbHelper.update(task);
+    await loadTasks(); // Recarrega a lista
+  }
+
+  // Marca/Desmarca uma tarefa como concluída atualiza no banco
+  Future<void> toggleTaskCompletion(String id) async {
     final taskIndex = _tasks.indexWhere((task) => task.id == id);
     if (taskIndex >= 0) {
-      _tasks[taskIndex].isCompleted = !_tasks[taskIndex].isCompleted;
-      // Se marcou como concluída, muda o status para Concluido
-      // Se desmarcou, volta para Parado (ou pode manter o status anterior)
-      if (_tasks[taskIndex].isCompleted) {
-        _tasks[taskIndex].status = TaskStatus.Concluido;
-      } else {
-        _tasks[taskIndex].status =
-            TaskStatus.Parado; // Ou mantenha o status anterior
-      }
-      notifyListeners();
+      final taskToUpdate = _tasks[taskIndex];
+      taskToUpdate.isCompleted = !taskToUpdate.isCompleted;
+      taskToUpdate.status = taskToUpdate.isCompleted
+          ? TaskStatus.Concluido
+          : TaskStatus.Parado;
+
+      await updateTask(taskToUpdate);
     }
+  }
+
+  // Deleta uma tarefa no banco
+  Future<void> deleteTask(String id) async {
+    final dbHelper = DatabaseHelper.instance;
+    await dbHelper.delete(id);
+    await loadTasks(); // Recarrega a lista
   }
 
   void setFilter(TaskStatus? status) {
     _currentFilter = status;
-    notifyListeners();
+    notifyListeners(); // Filtro não mexe no banco só na exibição
   }
 }
