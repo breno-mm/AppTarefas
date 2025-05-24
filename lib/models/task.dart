@@ -7,7 +7,6 @@ enum TaskStatus { Parado, EmAndamento, Atrasado, Concluido }
 extension TaskStatusExtension on TaskStatus {
   String get statusText {
     switch (this) {
-      // 'this' se refere à própria instância do enum (Parado, EmAndamento, etc.)
       case TaskStatus.Parado:
         return 'Parado';
       case TaskStatus.EmAndamento:
@@ -17,11 +16,10 @@ extension TaskStatusExtension on TaskStatus {
       case TaskStatus.Concluido:
         return 'Concluído';
       default:
-        return 'Parado'; // Fallback
+        return 'Parado';
     }
   }
 
-  // (Opcional) Podemos mover a lógica da imagem para cá também, se preferir
   String get statusImage {
     switch (this) {
       case TaskStatus.Parado:
@@ -35,6 +33,14 @@ extension TaskStatusExtension on TaskStatus {
       default:
         return 'assets/images/redcircle.png';
     }
+  }
+
+  // Converte a string do banco para o enum
+  static TaskStatus fromString(String statusStr) {
+    return TaskStatus.values.firstWhere(
+      (e) => e.toString() == 'TaskStatus.$statusStr',
+      orElse: () => TaskStatus.Parado,
+    );
   }
 }
 
@@ -53,11 +59,32 @@ class Task {
     this.isCompleted = false,
   });
 
-  // Mapeia o status para o nome da imagem, considerando 'isCompleted'
   String get taskImage {
-    // Se estiver concluído, a imagem é sempre verde, independentemente do status original
     if (isCompleted) return TaskStatus.Concluido.statusImage;
-    // Caso contrário, usa a imagem do status atual
     return status.statusImage;
+  }
+
+  // -> Novas funções para o Banco de Dados
+
+  // Converte a Tarefa para um Map (para salvar no DB)
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'status': status.name,
+      'isCompleted': isCompleted ? 1 : 0,
+    };
+  }
+
+  // Converte um Map vindo do DB para uma Tarefa
+  factory Task.fromMap(Map<String, dynamic> map) {
+    return Task(
+      id: map['id'],
+      title: map['title'],
+      description: map['description'] ?? '',
+      status: TaskStatusExtension.fromString(map['status']),
+      isCompleted: map['isCompleted'] == 1,
+    );
   }
 }
