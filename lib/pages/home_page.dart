@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
 import 'create_task_page.dart';
-import '../main.dart'; // acessar o nome da rota
+import '../main.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -196,7 +196,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          task.title, // Título dinâmico
+                                          task.title,
                                           style: theme.textTheme.bodyMedium,
                                         ),
                                       ],
