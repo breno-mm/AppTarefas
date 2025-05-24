@@ -52,5 +52,37 @@ class DatabaseHelper {
     ''');
   }
 
-  // -> Funções para interagir com o banco a partir daqui
+  // -> Funções para interagir com o banco
+
+  // Inserir nova tarefa
+  Future<int> insert(Task task) async {
+    Database db = await instance.database;
+    return await db.insert(table, task.toMap());
+  }
+
+  // Buscar todas as tarefas
+  Future<List<Task>> queryAllTasks() async {
+    Database db = await instance.database;
+    List<Map<String, dynamic>> maps = await db.query(table);
+    // Transforma a lista de Mapas em uma lista de Tarefas
+    return maps.map((map) => Task.fromMap(map)).toList();
+  }
+
+  // Atualizar tarefa existente
+  Future<int> update(Task task) async {
+    Database db = await instance.database;
+    String id = task.id;
+    return await db.update(
+      table,
+      task.toMap(),
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Deletar tarefa pelo ID
+  Future<int> delete(String id) async {
+    Database db = await instance.database;
+    return await db.delete(table, where: '$columnId = ?', whereArgs: [id]);
+  }
 }
