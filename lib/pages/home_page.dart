@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/task_provider.dart';
 import '../models/task.dart';
-import 'create_task_page.dart';
 import '../main.dart';
 
 class HomePageWidget extends StatefulWidget {
@@ -140,7 +137,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                           ),
                           child: InkWell(
                             onTap: () {
-                              // TODO: Implementar navegação para ViewTaskWidget
+                              //  Implementar navegação para ViewTaskWidget
                               print('Visualizar: ${task.title}');
                             },
                             child: Card(
